@@ -6,20 +6,23 @@ signal player_defeated
 @export var run_speed: float = 240.0
 @export var acceleration: float = 1400.0
 @export var deacceleration: float = 1700.0
-@export var jump_velocity: float = -430.0
+@export var jump_velocity: float = -450.0
 @export var wall_jump_push: float = 260.0
 @export var max_fall_speed: float = 900.0
 @export var wall_slide_speed: float = 110.0
 @export var wall_slide_gravity_factor: float = 0.18
 @export var dash_speed: float = 540.0
-@export var dash_duration: float = 0.16
-@export var dash_cooldown: float = 0.42
-@export var melee_active_time: float = 0.14
-@export var melee_cooldown: float = 0.30
+@export var dash_duration: float = 0.14
+@export var dash_cooldown: float = 0.36
+@export var melee_active_time: float = 0.12
+@export var melee_cooldown: float = 0.26
 @export var melee_damage: int = 1
 @export var max_health: int = 6
 @export var invulnerability_time: float = 0.5
 @export var damage_flash_time: float = 0.12
+@export var coyote_time: float = 0.10
+@export var jump_buffer_time: float = 0.10
+@export var jump_cut_factor: float = 0.55
 
 var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity") as float
 var facing: int = 1
@@ -33,6 +36,8 @@ var current_health: int = 0
 var melee_hit_ids: Dictionary = {}
 var damage_flash_left: float = 0.0
 var base_body_color: Color = Color(0.964706, 0.839216, 0.498039, 1.0)
+var coyote_left: float = 0.0
+var jump_buffer_left: float = 0.0
 
 @onready var attack_pivot: Node2D = $AttackPivot
 @onready var body_visual: Polygon2D = $BodyVisual
@@ -67,11 +72,23 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if Input.is_action_just_pressed("jump"):
-		if is_on_floor():
+		jump_buffer_left = jump_buffer_time
+
+	if is_on_floor():
+		coyote_left = coyote_time
+
+	if jump_buffer_left > 0.0:
+		if coyote_left > 0.0:
 			velocity.y = jump_velocity
+			jump_buffer_left = 0.0
+			coyote_left = 0.0
 		elif is_on_wall_only():
 			velocity.y = jump_velocity * 0.92
 			velocity.x = -get_wall_normal().x * wall_jump_push
+			jump_buffer_left = 0.0
+
+	if Input.is_action_just_released("jump") and velocity.y < 0.0:
+		velocity.y *= jump_cut_factor
 
 	var target_speed: float = axis * run_speed
 	var accel: float = acceleration if axis != 0.0 else deacceleration
@@ -131,6 +148,8 @@ func _update_timers(delta: float) -> void:
 	melee_cooldown_left = max(melee_cooldown_left - delta, 0.0)
 	invulnerability_left = max(invulnerability_left - delta, 0.0)
 	damage_flash_left = max(damage_flash_left - delta, 0.0)
+	coyote_left = max(coyote_left - delta, 0.0)
+	jump_buffer_left = max(jump_buffer_left - delta, 0.0)
 
 	if melee_time_left == 0.0 and not melee_collision.disabled:
 		melee_collision.disabled = true

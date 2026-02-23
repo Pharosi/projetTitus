@@ -6,11 +6,12 @@ signal boss_dialogue(text: String)
 
 @export var area_id: StringName = &"forest_slice"
 @export var max_health: int = 12
-@export var chase_speed_dark: float = 190.0
-@export var chase_speed_unstable: float = 145.0
-@export var chase_speed_lit: float = 105.0
+@export var chase_speed_dark: float = 180.0
+@export var chase_speed_unstable: float = 138.0
+@export var chase_speed_lit: float = 100.0
 @export var contact_damage: int = 1
-@export var attack_cooldown: float = 0.9
+@export var attack_cooldown: float = 1.0
+@export var contact_range: float = 40.0
 @export var damage_flash_time: float = 0.10
 
 var current_health: int
@@ -53,7 +54,7 @@ func _physics_process(delta: float) -> void:
 
 	global_position.x = clamp(global_position.x, left_bound.global_position.x, right_bound.global_position.x)
 
-	if damage_cooldown_left == 0.0 and global_position.distance_to(player.global_position) < 46.0:
+	if damage_cooldown_left == 0.0 and global_position.distance_to(player.global_position) < contact_range:
 		damage_cooldown_left = attack_cooldown
 		if player.has_method("receive_damage"):
 			player.receive_damage(contact_damage, global_position.x)
