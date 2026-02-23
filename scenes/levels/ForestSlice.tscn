@@ -1,0 +1,107 @@
+[gd_scene load_steps=8 format=3 uid="uid://c2a3kr6n1ea71"]
+
+[ext_resource type="PackedScene" path="res://scenes/npc/Alba.tscn" id="1_2utg4"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/AodhEcho.tscn" id="2_hywla"]
+[ext_resource type="Script" path="res://scripts/environment/light_reactive_platform.gd" id="3_m3kg7"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(1850, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(72, 380)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
+size = Vector2(220, 28)
+
+[node name="ForestSlice" type="Node2D"]
+
+[node name="Sky" type="ColorRect" parent="."]
+offset_left = -960.0
+offset_top = -460.0
+offset_right = 960.0
+offset_bottom = 420.0
+color = Color(0.0588235, 0.109804, 0.129412, 1)
+
+[node name="FogBack" type="ColorRect" parent="."]
+offset_left = -960.0
+offset_top = -250.0
+offset_right = 960.0
+offset_bottom = 420.0
+color = Color(0.109804, 0.180392, 0.172549, 0.5)
+
+[node name="FogFront" type="ColorRect" parent="."]
+offset_left = -960.0
+offset_top = -120.0
+offset_right = 960.0
+offset_bottom = 420.0
+color = Color(0.172549, 0.266667, 0.239216, 0.35)
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(0, 286)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="GroundVisual" type="ColorRect" parent="Ground"]
+offset_left = -925.0
+offset_top = -32.0
+offset_right = 925.0
+offset_bottom = 32.0
+color = Color(0.12549, 0.2, 0.184314, 1)
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+position = Vector2(-930, 96)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+position = Vector2(930, 96)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="AncientPlatform" type="StaticBody2D" parent="."]
+position = Vector2(-130, 92)
+script = ExtResource("3_m3kg7")
+area_id = &"forest_slice"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AncientPlatform"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="PlatformVisual" type="ColorRect" parent="AncientPlatform"]
+offset_left = -110.0
+offset_top = -14.0
+offset_right = 110.0
+offset_bottom = 14.0
+color = Color(1, 0.913725, 0.537255, 1)
+
+[node name="TreeLeft" type="ColorRect" parent="."]
+offset_left = -710.0
+offset_top = -80.0
+offset_right = -640.0
+offset_bottom = 286.0
+color = Color(0.0941176, 0.164706, 0.133333, 1)
+
+[node name="TreeCenter" type="ColorRect" parent="."]
+offset_left = -42.0
+offset_top = -130.0
+offset_right = 42.0
+offset_bottom = 286.0
+color = Color(0.0941176, 0.180392, 0.14902, 1)
+
+[node name="TreeRight" type="ColorRect" parent="."]
+offset_left = 620.0
+offset_top = -95.0
+offset_right = 700.0
+offset_bottom = 286.0
+color = Color(0.0941176, 0.164706, 0.133333, 1)
+
+[node name="Alba" parent="." instance=ExtResource("1_2utg4")]
+position = Vector2(-470, 254)
+
+[node name="AodhEcho" parent="." instance=ExtResource("2_hywla")]
+position = Vector2(470, 286)
+
+[node name="Spawn" type="Marker2D" parent="."]
+position = Vector2(-760, 226)
