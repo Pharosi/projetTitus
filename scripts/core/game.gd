@@ -1,6 +1,7 @@
 extends Node2D
 
 @onready var status_label: Label = $CanvasLayer/UIRoot/TopPanel/StatusLabel
+@onready var left_panel: ColorRect = $CanvasLayer/UIRoot/LeftPanel
 @onready var light_label: Label = $CanvasLayer/UIRoot/LeftPanel/LightLabel
 @onready var player_label: Label = $CanvasLayer/UIRoot/LeftPanel/PlayerLabel
 @onready var boss_label: Label = $CanvasLayer/UIRoot/BossPanel/BossLabel
@@ -8,6 +9,7 @@ extends Node2D
 @onready var player_health_bar: ProgressBar = $CanvasLayer/UIRoot/LeftPanel/PlayerHealthBar
 @onready var boss_health_bar: ProgressBar = $CanvasLayer/UIRoot/BossPanel/BossHealthBar
 @onready var light_state_bar: ProgressBar = $CanvasLayer/UIRoot/LeftPanel/LightStateBar
+@onready var scene_light_overlay: ColorRect = $CanvasLayer/UIRoot/SceneLightOverlay
 
 @onready var spawn_marker: Marker2D = $ForestSlice/Spawn
 @onready var titus: Node2D = $Titus
@@ -15,6 +17,7 @@ extends Node2D
 @onready var aodh_echo: Node = $ForestSlice/AodhEcho
 
 var narrative_timeout_left: float = 0.0
+var light_tween: Tween
 
 func _ready() -> void:
 	titus.global_position = spawn_marker.global_position
@@ -54,7 +57,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_light_state_changed(_area_id: StringName, light_state: int) -> void:
 	light_label.text = "Estado: %s" % LightState.get_state_name()
-	light_state_bar.value = float(light_state)
+	_animate_light_feedback(light_state)
 
 func _on_player_health_changed(current: int, maximum: int) -> void:
 	player_label.text = "HP %d/%d" % [current, maximum]
@@ -99,3 +102,38 @@ func _sync_boss_hud() -> void:
 	var current: int = int(aodh_echo.get("current_health"))
 	var maximum: int = int(aodh_echo.get("max_health"))
 	_on_boss_health_changed(current, maximum)
+
+func _animate_light_feedback(light_state: int) -> void:
+	var overlay_color: Color = Color(0.05, 0.09, 0.14, 0.26)
+	var panel_color: Color = Color(0.04, 0.09, 0.12, 0.80)
+	var label_color: Color = Color(1.0, 1.0, 1.0, 1.0)
+	var bar_tint: Color = Color(0.55, 0.65, 0.92, 1.0)
+
+	match light_state:
+		LightState.State.DARK:
+			overlay_color = Color(0.03, 0.06, 0.10, 0.34)
+			panel_color = Color(0.03, 0.07, 0.11, 0.88)
+			label_color = Color(0.82, 0.89, 1.0, 1.0)
+			bar_tint = Color(0.48, 0.60, 0.94, 1.0)
+		LightState.State.UNSTABLE:
+			overlay_color = Color(0.14, 0.11, 0.06, 0.24)
+			panel_color = Color(0.12, 0.10, 0.08, 0.86)
+			label_color = Color(1.0, 0.93, 0.78, 1.0)
+			bar_tint = Color(0.95, 0.76, 0.30, 1.0)
+		LightState.State.LIT:
+			overlay_color = Color(0.30, 0.25, 0.12, 0.14)
+			panel_color = Color(0.14, 0.13, 0.08, 0.82)
+			label_color = Color(1.0, 0.98, 0.88, 1.0)
+			bar_tint = Color(1.0, 0.88, 0.30, 1.0)
+
+	if light_tween != null:
+		light_tween.kill()
+
+	light_tween = create_tween()
+	light_tween.set_trans(Tween.TRANS_SINE)
+	light_tween.set_ease(Tween.EASE_IN_OUT)
+	light_tween.parallel().tween_property(scene_light_overlay, "color", overlay_color, 0.35)
+	light_tween.parallel().tween_property(left_panel, "color", panel_color, 0.35)
+	light_tween.parallel().tween_property(light_label, "modulate", label_color, 0.35)
+	light_tween.parallel().tween_property(light_state_bar, "value", float(light_state), 0.28)
+	light_tween.parallel().tween_property(light_state_bar, "modulate", bar_tint, 0.35)
