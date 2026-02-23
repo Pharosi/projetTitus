@@ -1,0 +1,34 @@
+[gd_scene load_steps=4 format=3 uid="uid://d3n6ce2n8k7hx"]
+
+[ext_resource type="Script" path="res://scripts/player/titus_controller.gd" id="1_0yvi6"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(26, 46)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_melee"]
+size = Vector2(34, 20)
+
+[node name="Titus" type="CharacterBody2D"]
+script = ExtResource("1_0yvi6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -24)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="BodyVisual" type="Polygon2D" parent="."]
+color = Color(0.964706, 0.839216, 0.498039, 1)
+polygon = PackedVector2Array(-13, -47, 13, -47, 13, -1, -13, -1)
+
+[node name="AttackPivot" type="Node2D" parent="."]
+position = Vector2(20, -24)
+
+[node name="MeleeArea" type="Area2D" parent="AttackPivot"]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AttackPivot/MeleeArea"]
+shape = SubResource("RectangleShape2D_melee")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -90)
+enabled = true
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0

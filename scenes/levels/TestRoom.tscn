@@ -1,0 +1,104 @@
+[gd_scene load_steps=8 format=3 uid="uid://dayq8r5trd70l"]
+
+[ext_resource type="Script" path="res://scripts/environment/light_reactive_platform.gd" id="1_g650x"]
+[ext_resource type="Script" path="res://scripts/enemies/shade_enemy.gd" id="2_st777"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_floor"]
+size = Vector2(1080, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(56, 360)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_light_platform"]
+size = Vector2(180, 26)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_enemy"]
+size = Vector2(32, 40)
+
+[node name="TestRoom" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = -640.0
+offset_top = -360.0
+offset_right = 640.0
+offset_bottom = 360.0
+color = Color(0.0470588, 0.0745098, 0.121569, 1)
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(0, 280)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("RectangleShape2D_floor")
+
+[node name="GroundVisual" type="ColorRect" parent="Ground"]
+offset_left = -540.0
+offset_top = -32.0
+offset_right = 540.0
+offset_bottom = 32.0
+color = Color(0.14902, 0.196078, 0.278431, 1)
+
+[node name="LeftWall" type="StaticBody2D" parent="."]
+position = Vector2(-560, 100)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="WallVisual" type="ColorRect" parent="LeftWall"]
+offset_left = -28.0
+offset_top = -180.0
+offset_right = 28.0
+offset_bottom = 180.0
+color = Color(0.203922, 0.247059, 0.337255, 1)
+
+[node name="RightWall" type="StaticBody2D" parent="."]
+position = Vector2(560, 100)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="WallVisual" type="ColorRect" parent="RightWall"]
+offset_left = -28.0
+offset_top = -180.0
+offset_right = 28.0
+offset_bottom = 180.0
+color = Color(0.203922, 0.247059, 0.337255, 1)
+
+[node name="LightPlatform" type="StaticBody2D" parent="."]
+position = Vector2(-80, 80)
+script = ExtResource("1_g650x")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LightPlatform"]
+shape = SubResource("RectangleShape2D_light_platform")
+
+[node name="PlatformVisual" type="ColorRect" parent="LightPlatform"]
+offset_left = -90.0
+offset_top = -13.0
+offset_right = 90.0
+offset_bottom = 13.0
+color = Color(1, 0.905882, 0.458824, 1)
+
+[node name="ShadeEnemy" type="CharacterBody2D" parent="."]
+position = Vector2(240, 240)
+script = ExtResource("2_st777")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShadeEnemy"]
+position = Vector2(0, -20)
+shape = SubResource("RectangleShape2D_enemy")
+
+[node name="BodyVisual" type="ColorRect" parent="ShadeEnemy"]
+offset_left = -16.0
+offset_top = -40.0
+offset_right = 16.0
+offset_bottom = 0.0
+color = Color(0.7, 0.15, 0.2, 1)
+
+[node name="PatrolPoints" type="Node2D" parent="ShadeEnemy"]
+
+[node name="Left" type="Marker2D" parent="ShadeEnemy/PatrolPoints"]
+position = Vector2(-180, 0)
+
+[node name="Right" type="Marker2D" parent="ShadeEnemy/PatrolPoints"]
+position = Vector2(180, 0)
+
+[node name="Spawn" type="Marker2D" parent="."]
+position = Vector2(-420, 180)
