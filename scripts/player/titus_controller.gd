@@ -1,5 +1,8 @@
 extends CharacterBody2D
 
+signal health_changed(current: int, maximum: int)
+signal player_defeated
+
 @export var run_speed: float = 240.0
 @export var acceleration: float = 1400.0
 @export var deacceleration: float = 1700.0
@@ -13,6 +16,9 @@ extends CharacterBody2D
 @export var dash_cooldown: float = 0.42
 @export var melee_active_time: float = 0.14
 @export var melee_cooldown: float = 0.30
+@export var melee_damage: int = 1
+@export var max_health: int = 6
+@export var invulnerability_time: float = 0.5
 
 var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity") as float
 var facing: int = 1
@@ -21,18 +27,26 @@ var dash_time_left: float = 0.0
 var dash_cooldown_left: float = 0.0
 var melee_time_left: float = 0.0
 var melee_cooldown_left: float = 0.0
+var invulnerability_left: float = 0.0
+var current_health: int = 0
+var melee_hit_ids: Dictionary = {}
 
 @onready var attack_pivot: Node2D = $AttackPivot
 @onready var body_visual: Polygon2D = $BodyVisual
+@onready var melee_area: Area2D = $AttackPivot/MeleeArea
 @onready var melee_collision: CollisionShape2D = $AttackPivot/MeleeArea/CollisionShape2D
 
 func _ready() -> void:
+	add_to_group("player")
+	current_health = max_health
+	health_changed.emit(current_health, max_health)
 	melee_collision.disabled = true
 	_update_facing(1.0)
 
 func _physics_process(delta: float) -> void:
 	_update_timers(delta)
 	_handle_melee_input()
+	_resolve_melee_hits()
 
 	var axis: float = Input.get_axis("move_left", "move_right")
 	if axis != 0.0:
@@ -102,6 +116,7 @@ func _handle_melee_input() -> void:
 
 	melee_time_left = melee_active_time
 	melee_cooldown_left = melee_cooldown
+	melee_hit_ids.clear()
 	melee_collision.disabled = false
 
 func _update_timers(delta: float) -> void:
@@ -109,6 +124,7 @@ func _update_timers(delta: float) -> void:
 	dash_cooldown_left = max(dash_cooldown_left - delta, 0.0)
 	melee_time_left = max(melee_time_left - delta, 0.0)
 	melee_cooldown_left = max(melee_cooldown_left - delta, 0.0)
+	invulnerability_left = max(invulnerability_left - delta, 0.0)
 
 	if melee_time_left == 0.0 and not melee_collision.disabled:
 		melee_collision.disabled = true
@@ -117,3 +133,36 @@ func _update_facing(axis: float) -> void:
 	facing = 1 if axis > 0.0 else -1
 	body_visual.scale.x = float(facing)
 	attack_pivot.position.x = 20.0 * float(facing)
+
+func _resolve_melee_hits() -> void:
+	if melee_collision.disabled:
+		return
+
+	for body: Node2D in melee_area.get_overlapping_bodies():
+		var target_id: int = body.get_instance_id()
+		if melee_hit_ids.has(target_id):
+			continue
+		if body.has_method("apply_melee_hit"):
+			body.apply_melee_hit(melee_damage, global_position)
+			melee_hit_ids[target_id] = true
+
+func receive_damage(amount: int, source_x: float) -> void:
+	if invulnerability_left > 0.0:
+		return
+	if current_health <= 0:
+		return
+
+	current_health = max(current_health - amount, 0)
+	invulnerability_left = invulnerability_time
+	health_changed.emit(current_health, max_health)
+
+	var knockback_dir: float = sign(global_position.x - source_x)
+	velocity.x = knockback_dir * 220.0
+	velocity.y = jump_velocity * 0.35
+
+	if current_health == 0:
+		player_defeated.emit()
+
+func restore_health() -> void:
+	current_health = max_health
+	health_changed.emit(current_health, max_health)

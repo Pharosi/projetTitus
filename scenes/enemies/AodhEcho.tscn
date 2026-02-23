@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3 uid="uid://dlogsgk2x6e4r"]
+
+[ext_resource type="Script" path="res://scripts/enemies/aodh_echo.gd" id="1_dsqvw"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_boss"]
+size = Vector2(40, 56)
+
+[node name="AodhEcho" type="CharacterBody2D"]
+script = ExtResource("1_dsqvw")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -28)
+shape = SubResource("RectangleShape2D_boss")
+
+[node name="BodyVisual" type="ColorRect" parent="."]
+offset_left = -20.0
+offset_top = -56.0
+offset_right = 20.0
+offset_bottom = 0.0
+color = Color(0.84, 0.2, 0.16, 1)
+
+[node name="ArenaBounds" type="Node2D" parent="."]
+
+[node name="Left" type="Marker2D" parent="ArenaBounds"]
+position = Vector2(-240, 0)
+
+[node name="Right" type="Marker2D" parent="ArenaBounds"]
+position = Vector2(240, 0)
