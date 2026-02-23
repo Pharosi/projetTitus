@@ -19,6 +19,7 @@ signal player_defeated
 @export var melee_damage: int = 1
 @export var max_health: int = 6
 @export var invulnerability_time: float = 0.5
+@export var damage_flash_time: float = 0.12
 
 var gravity: float = ProjectSettings.get_setting("physics/2d/default_gravity") as float
 var facing: int = 1
@@ -30,6 +31,8 @@ var melee_cooldown_left: float = 0.0
 var invulnerability_left: float = 0.0
 var current_health: int = 0
 var melee_hit_ids: Dictionary = {}
+var damage_flash_left: float = 0.0
+var base_body_color: Color = Color(0.964706, 0.839216, 0.498039, 1.0)
 
 @onready var attack_pivot: Node2D = $AttackPivot
 @onready var body_visual: Polygon2D = $BodyVisual
@@ -41,12 +44,14 @@ func _ready() -> void:
 	current_health = max_health
 	health_changed.emit(current_health, max_health)
 	melee_collision.disabled = true
+	base_body_color = body_visual.color
 	_update_facing(1.0)
 
 func _physics_process(delta: float) -> void:
 	_update_timers(delta)
 	_handle_melee_input()
 	_resolve_melee_hits()
+	_update_visual_feedback()
 
 	var axis: float = Input.get_axis("move_left", "move_right")
 	if axis != 0.0:
@@ -125,6 +130,7 @@ func _update_timers(delta: float) -> void:
 	melee_time_left = max(melee_time_left - delta, 0.0)
 	melee_cooldown_left = max(melee_cooldown_left - delta, 0.0)
 	invulnerability_left = max(invulnerability_left - delta, 0.0)
+	damage_flash_left = max(damage_flash_left - delta, 0.0)
 
 	if melee_time_left == 0.0 and not melee_collision.disabled:
 		melee_collision.disabled = true
@@ -154,6 +160,7 @@ func receive_damage(amount: int, source_x: float) -> void:
 
 	current_health = max(current_health - amount, 0)
 	invulnerability_left = invulnerability_time
+	damage_flash_left = damage_flash_time
 	health_changed.emit(current_health, max_health)
 
 	var knockback_dir: float = sign(global_position.x - source_x)
@@ -166,3 +173,9 @@ func receive_damage(amount: int, source_x: float) -> void:
 func restore_health() -> void:
 	current_health = max_health
 	health_changed.emit(current_health, max_health)
+
+func _update_visual_feedback() -> void:
+	if damage_flash_left > 0.0:
+		body_visual.color = Color(1.0, 0.35, 0.35, 1.0)
+		return
+	body_visual.color = base_body_color

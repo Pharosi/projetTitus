@@ -11,11 +11,14 @@ signal boss_dialogue(text: String)
 @export var chase_speed_lit: float = 105.0
 @export var contact_damage: int = 1
 @export var attack_cooldown: float = 0.9
+@export var damage_flash_time: float = 0.10
 
 var current_health: int
 var move_speed: float = 140.0
 var damage_cooldown_left: float = 0.0
 var is_defeated: bool = false
+var damage_flash_left: float = 0.0
+var base_body_color: Color = Color(0.84, 0.2, 0.16, 1.0)
 
 @onready var left_bound: Marker2D = $ArenaBounds/Left
 @onready var right_bound: Marker2D = $ArenaBounds/Right
@@ -34,6 +37,8 @@ func _physics_process(delta: float) -> void:
 		return
 
 	damage_cooldown_left = max(damage_cooldown_left - delta, 0.0)
+	damage_flash_left = max(damage_flash_left - delta, 0.0)
+	_update_visual_feedback()
 
 	var player: CharacterBody2D = _get_player()
 	if player == null:
@@ -59,13 +64,15 @@ func apply_melee_hit(damage: int, source_position: Vector2) -> void:
 
 	current_health = max(current_health - damage, 0)
 	boss_health_changed.emit(current_health, max_health)
+	damage_flash_left = damage_flash_time
 
 	var knockback_dir: float = sign(global_position.x - source_position.x)
 	global_position.x += knockback_dir * 14.0
 
 	if current_health <= 0:
 		is_defeated = true
-		body_visual.color = Color(0.65, 0.65, 0.65, 0.65)
+		base_body_color = Color(0.65, 0.65, 0.65, 0.65)
+		body_visual.color = base_body_color
 		boss_dialogue.emit("Eco de Aodh: A chama... se apaga...")
 		boss_defeated.emit()
 
@@ -76,19 +83,29 @@ func _on_light_state_changed(changed_area_id: StringName, light_state: int) -> v
 	match light_state:
 		LightState.State.DARK:
 			move_speed = chase_speed_dark
-			body_visual.color = Color(0.84, 0.2, 0.16, 1.0)
+			base_body_color = Color(0.84, 0.2, 0.16, 1.0)
 			boss_dialogue.emit("Eco de Aodh: Na escuridao, meu fogo devora tudo.")
 		LightState.State.UNSTABLE:
 			move_speed = chase_speed_unstable
-			body_visual.color = Color(0.88, 0.42, 0.18, 1.0)
+			base_body_color = Color(0.88, 0.42, 0.18, 1.0)
 			boss_dialogue.emit("Eco de Aodh: A luz vacila, Titus.")
 		LightState.State.LIT:
 			move_speed = chase_speed_lit
-			body_visual.color = Color(0.95, 0.72, 0.28, 1.0)
+			base_body_color = Color(0.95, 0.72, 0.28, 1.0)
 			boss_dialogue.emit("Eco de Aodh: Esta luz enfraquece minha furia...")
+	_update_visual_feedback()
 
 func _get_player() -> CharacterBody2D:
 	var players: Array[Node] = get_tree().get_nodes_in_group("player")
 	if players.is_empty():
 		return null
 	return players[0] as CharacterBody2D
+
+func _update_visual_feedback() -> void:
+	if is_defeated:
+		body_visual.color = base_body_color
+		return
+	if damage_flash_left > 0.0:
+		body_visual.color = Color(1.0, 0.92, 0.92, 1.0)
+		return
+	body_visual.color = base_body_color
