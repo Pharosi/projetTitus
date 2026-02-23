@@ -19,6 +19,16 @@ extends Node2D
 var narrative_timeout_left: float = 0.0
 var light_tween: Tween
 
+enum NarrativePriority {
+	LOW = 0,
+	MEDIUM = 1,
+	HIGH = 2
+}
+
+var current_narrative_priority: int = NarrativePriority.LOW
+var last_boss_dialogue: String = ""
+var boss_dialogue_cooldown_left: float = 0.0
+
 func _ready() -> void:
 	titus.global_position = spawn_marker.global_position
 
@@ -30,11 +40,11 @@ func _ready() -> void:
 	if aodh_echo.has_signal("boss_health_changed"):
 		aodh_echo.boss_health_changed.connect(_on_boss_health_changed)
 	if aodh_echo.has_signal("boss_dialogue"):
-		aodh_echo.boss_dialogue.connect(_show_narrative)
+		aodh_echo.boss_dialogue.connect(_on_boss_dialogue)
 	if aodh_echo.has_signal("boss_defeated"):
 		aodh_echo.boss_defeated.connect(_on_boss_defeated)
 	if alba.has_signal("dialogue_requested"):
-		alba.dialogue_requested.connect(_show_narrative)
+		alba.dialogue_requested.connect(_on_alba_dialogue)
 	if alba.has_signal("sanctuary_activated"):
 		alba.sanctuary_activated.connect(_on_sanctuary_activated)
 
@@ -42,14 +52,17 @@ func _ready() -> void:
 	LightState.enter_area(&"forest_slice")
 	_sync_player_hud()
 	_sync_boss_hud()
-	_show_narrative("Alba: Titus, encontre o santuario e estabilize a luz da floresta.")
+	_show_narrative("Alba: Titus, encontre o santuario e estabilize a luz da floresta.", NarrativePriority.HIGH, 4.6)
 
 func _process(delta: float) -> void:
+	boss_dialogue_cooldown_left = max(boss_dialogue_cooldown_left - delta, 0.0)
+
 	if narrative_timeout_left == 0.0:
 		return
 	narrative_timeout_left = max(narrative_timeout_left - delta, 0.0)
 	if narrative_timeout_left == 0.0:
 		narrative_label.text = ""
+		current_narrative_priority = NarrativePriority.LOW
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("light_action"):
@@ -73,19 +86,23 @@ func _on_player_defeated() -> void:
 	titus.global_position = spawn_marker.global_position
 	if titus.has_method("restore_health"):
 		titus.restore_health()
-	_show_narrative("Alba: Levante-se, Titus. A luz ainda precisa de voce.")
+	_show_narrative("Alba: Levante-se, Titus. A luz ainda precisa de voce.", NarrativePriority.HIGH, 4.8)
 
 func _on_boss_defeated() -> void:
 	boss_label.text = "Derrotado"
 	boss_health_bar.value = 0.0
-	_show_narrative("Alba: Voce restaurou a aurora desta regiao.")
+	_show_narrative("Alba: Voce restaurou a aurora desta regiao.", NarrativePriority.HIGH, 4.8)
 
 func _on_sanctuary_activated() -> void:
-	_show_narrative("Santuario ativado. A luz envolveu a floresta.")
+	_show_narrative("Santuario ativado. A luz envolveu a floresta.", NarrativePriority.HIGH, 4.2)
 
-func _show_narrative(text: String) -> void:
+func _show_narrative(text: String, priority: int = NarrativePriority.MEDIUM, duration: float = 4.2) -> void:
+	if narrative_timeout_left > 0.0 and priority < current_narrative_priority:
+		return
+
+	current_narrative_priority = priority
 	narrative_label.text = text
-	narrative_timeout_left = 4.2
+	narrative_timeout_left = duration
 
 func _sync_player_hud() -> void:
 	if not titus.has_method("get"):
@@ -137,3 +154,16 @@ func _animate_light_feedback(light_state: int) -> void:
 	light_tween.parallel().tween_property(light_label, "modulate", label_color, 0.35)
 	light_tween.parallel().tween_property(light_state_bar, "value", float(light_state), 0.28)
 	light_tween.parallel().tween_property(light_state_bar, "modulate", bar_tint, 0.35)
+
+func _on_boss_dialogue(text: String) -> void:
+	if text == last_boss_dialogue:
+		return
+	if boss_dialogue_cooldown_left > 0.0:
+		return
+
+	last_boss_dialogue = text
+	boss_dialogue_cooldown_left = 1.1
+	_show_narrative(text, NarrativePriority.LOW, 2.8)
+
+func _on_alba_dialogue(text: String) -> void:
+	_show_narrative(text, NarrativePriority.HIGH, 4.4)
